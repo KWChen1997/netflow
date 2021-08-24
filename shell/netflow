@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [[ $EUID -ne 0 ]]; then
+	echo "This program need root privilege!"
+	exit -1
+fi
+
+conntrack $@ -L 2>/dev/null|\
+./filter.awk|\
+sort -n -k 11 -k 13 -r|\
+head -n 5

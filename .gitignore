@@ -1,0 +1,8 @@
+*.o
+*.ko
+*.symvers
+*.order
+*.mod*
+*.swp
+*.cmd
+c/netflow
