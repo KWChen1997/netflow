@@ -27,7 +27,7 @@ int main(){
 		// write to pipefd[1]
 		dup2(pipefd[1],STDOUT_FILENO);
 		close(pipefd[0]);
-		if(execl("../netflow", "netflow", "-s","10.42.0.205",NULL) == -1){
+		if(execl("../netflow", "netflow", "-s","10.42.0.205","-d","10.42.0.1",NULL) == -1){
 			perror("exec");
 			exit(-1);
 		}
@@ -36,6 +36,7 @@ int main(){
 		// parent
 		// read from pipefd[0]
 		close(pipefd[1]);
+		/*
 		MYSQL *con = mysql_init(NULL);
 		if(con == NULL){
 			fprintf(stderr, "%s\n", mysql_error(con));
@@ -49,6 +50,7 @@ int main(){
 			mysql_close(con);
 			exit(-1);
 		}
+		*/
 		/*
 		if(mysql_query(con, "USE dnsprofile;")){
 			fprintf(stderr, "%s\n", mysql_error(con));
@@ -69,16 +71,16 @@ int main(){
 				printf("--------------------------------\n");
 				continue;
 			}
-			snprintf(buf, sizeof(buf), "INSERT IGNORE access VALUE (\'%u.%u.%u.%u\', \'%u.%u.%u.%u\');", NIPQUAD(conn.saddr), NIPQUAD(conn.daddr));
-			printf("src %u.%u.%u.%u sport %u dst %u.%u.%u.%u dport %u packets %lu\n", NIPQUAD(conn.saddr), conn.sport, NIPQUAD(conn.daddr), conn.dport, conn.packets);
-			
+			//snprintf(buf, sizeof(buf), "INSERT IGNORE access VALUE (\'%u.%u.%u.%u\', \'%u.%u.%u.%u\');", NIPQUAD(conn.saddr), NIPQUAD(conn.daddr));
+			///printf("src %u.%u.%u.%u sport %u dst %u.%u.%u.%u dport %u packets %lu\n", NIPQUAD(conn.saddr), conn.sport, NIPQUAD(conn.daddr), conn.dport, conn.packets);
+			/*
 			if(mysql_query(con, buf)){
 				fprintf(stderr, "%s\n", mysql_error(con));
 				kill(pid, SIGKILL);
 				mysql_close(con);
 				exit(-1);
 			}
-			
+			*/
 			//printf("qry_name %s ip %s\n", qry.name, qry.addr);
 
 		}
