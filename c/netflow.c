@@ -145,7 +145,7 @@ void connection_add(struct connection *conn){
 			target->dport == conn->dport){
 			break;
 		}
-		fprintf(stderr, "Collision %d\n", j);
+		//fprintf(stderr, "Collision %d\n", j);
 		j++;
 		hashval = (h1 + (j * h2) % HASHSIZE ) % HASHSIZE;
 		target = history + hashval;
@@ -174,12 +174,12 @@ void connection_history(){
 	timeinfo = localtime(&rawtime);
 	strftime(buf, 80, "%H:%M:%S", timeinfo);
 
-	fprintf(stderr,"-------------------\n");
-	fprintf(stderr,"Current time: %s.%03ld\n",buf,curTime.tv_usec/1000);
+	//fprintf(stderr,"-------------------\n");
+	//fprintf(stderr,"Current time: %s.%03ld\n",buf,curTime.tv_usec/1000);
 	
-	fprintf(stderr,"%-10s %-15s %-7s %-15s %-7s %10s %10s\n","type", "ip1", "port1", "ip2", "port2", "packets", "bytes");
+	//fprintf(stderr,"%-10s %-15s %-7s %-15s %-7s %10s %10s\n","type", "ip1", "port1", "ip2", "port2", "packets", "bytes");
 	for(i = 0; i < idx; i++){
-		fprintf(stderr,"%-10s %-15s %-7d %-15s %-7d %10ld %10ld\n", getprotobynumber(history[list[i]].proto)->p_name, ntoa(history[list[i]].saddr), history[list[i]].sport, ntoa(history[list[i]].daddr), history[list[i]].dport, history[list[i]].packets, history[list[i]].bytes);
+		//fprintf(stderr,"%-10s %-15s %-7d %-15s %-7d %10ld %10ld\n", getprotobynumber(history[list[i]].proto)->p_name, ntoa(history[list[i]].saddr), history[list[i]].sport, ntoa(history[list[i]].daddr), history[list[i]].dport, history[list[i]].packets, history[list[i]].bytes);
 		//write(STDOUT_FILENO, history + list[i], sizeof(struct connection));
 	}
 	
@@ -203,16 +203,16 @@ void connection_rate(){
 	timeinfo = localtime(&rawtime);
 	strftime(buf, 80, "%H:%M:%S", timeinfo);
 
-	fprintf(stderr,"-------------------\n");
-	fprintf(stderr,"Current time: %s.%03ld\n",buf,curTime.tv_usec/1000);
+	//fprintf(stderr,"-------------------\n");
+	//fprintf(stderr,"Current time: %s.%03ld\n",buf,curTime.tv_usec/1000);
 	
-	fprintf(stderr,"%-10s %-15s %-7s %-15s %-7s %10s %10s\n","type", "ip1", "port1", "ip2", "port2", "packets", "bytes");
+	//fprintf(stderr,"%-10s %-15s %-7s %-15s %-7s %10s %10s\n","type", "ip1", "port1", "ip2", "port2", "packets", "bytes");
 	for(i = 0; i < idx; i++){
-		fprintf(stderr,"%-10s %-15s %-7d %-15s %-7d %10ld %10ld\n", getprotobynumber(rate[list[i]].proto)->p_name, ntoa(rate[list[i]].saddr), rate[list[i]].sport, ntoa(rate[list[i]].daddr), rate[list[i]].dport, rate[list[i]].packets, rate[list[i]].bytes);
-		//write(STDOUT_FILENO, rate + list[i], sizeof(struct connection));
+		//fprintf(stderr,"%-10s %-15s %-7d %-15s %-7d %10ld %10ld\n", getprotobynumber(rate[list[i]].proto)->p_name, ntoa(rate[list[i]].saddr), rate[list[i]].sport, ntoa(rate[list[i]].daddr), rate[list[i]].dport, rate[list[i]].packets, rate[list[i]].bytes);
+		write(STDOUT_FILENO, rate + list[i], sizeof(struct connection));
 	}
 	
-	//write(STDOUT_FILENO, &(struct connection){.proto = 0, .saddr = 0, .sport = 0, .daddr = 0, .dport = 0, .packets = 0, .bytes = 0, .valid = 0}, sizeof(struct connection));
+	write(STDOUT_FILENO, &(struct connection){.proto = 0, .saddr = 0, .sport = 0, .daddr = 0, .dport = 0, .packets = 0, .bytes = 0, .valid = 0}, sizeof(struct connection));
 	
 	return;
 }
@@ -259,13 +259,13 @@ int cb(enum nf_conntrack_msg_type type, struct nf_conntrack *ct, void *data){
 		connection.packets += nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_PACKETS);
 	}
 	if(nfct_attr_is_set(ct,ATTR_REPL_COUNTER_PACKETS)){
-		connection.packets += nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_PACKETS);
+		//connection.packets += nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_PACKETS);
 	}
 	if(nfct_attr_is_set(ct,ATTR_ORIG_COUNTER_BYTES)){
 		connection.bytes += nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_BYTES);
 	}
 	if(nfct_attr_is_set(ct,ATTR_REPL_COUNTER_BYTES)){
-		connection.bytes += nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_BYTES);
+		//connection.bytes += nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_BYTES);
 	}
 
 	// simple filter for conntrack data
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]){
 	while((opt = getopt(argc, argv, "hs:d:T:t:")) != -1){
 		switch(opt){
 			case 'h':
-				fprintf(stderr,"Usage: ./netflow [-s <ip>] [-d <ip>] [-T <second>] [-t <millisecond>]\n\tNote: -T/-t are exclusive\n");
+				//fprintf(stderr,"Usage: ./netflow [-s <ip>] [-d <ip>] [-T <second>] [-t <millisecond>]\n\tNote: -T/-t are exclusive\n");
 				exit(0);
 				break;
 			case 's':
@@ -378,7 +378,7 @@ int main(int argc, char *argv[]){
 				dup2(filefd,1);
 				break;*/
 			case '?':
-				fprintf(stderr,"\tUsage: ./netflow [-s <ip>] [-d <ip>] [-T <second>] [-t <millisecond>]\n\t\tNote: -T/-t are exclusive\n");
+				//fprintf(stderr,"\tUsage: ./netflow [-s <ip>] [-d <ip>] [-T <second>] [-t <millisecond>]\n\t\tNote: -T/-t are exclusive\n");
 				exit(-1);
 		}
 	}
@@ -398,7 +398,7 @@ int main(int argc, char *argv[]){
 	}
 
 
-	fprintf(stderr,"Start conntrack ...\n");
+	//fprintf(stderr,"Start conntrack ...\n");
 	
 	ret = setitimer(ITIMER_REAL,&value,&ovalue);
 	if(ret == -1){
