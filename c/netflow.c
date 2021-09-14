@@ -126,9 +126,9 @@ void connection_add(struct connection *conn){
 		hashval = (h1 + 1) % HASHSIZE;
 		target = history + hashval;
 	}
-	if(conn->packets <= history[hashval].packets){
+
+	if(target->valid && conn->packets < target->packets){
 		memcpy(target, conn, sizeof(struct connection));
-		target->valid = 1;
 		return;
 	}
 	memcpy(rate + hashval, conn, sizeof(struct connection));
@@ -136,6 +136,7 @@ void connection_add(struct connection *conn){
 	rate[hashval].bytes -= history[hashval].bytes;
 	memcpy(target, conn, sizeof(struct connection));
 	target->valid = 1;
+	
 	list[idx] = hashval;
 	idx++;
 	return;
