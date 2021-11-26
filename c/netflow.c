@@ -293,7 +293,8 @@ void sigtimer(int signo){
 		exit(-1);
 	}
 	qsort(list,idx,sizeof(unsigned int),connection_list_comp);
-	connection_rate();
+	// connection_rate();
+	connection_history();
 	return;	
 }
 
@@ -366,8 +367,11 @@ int main(int argc, char *argv[]){
 					filter.dmask = 0xFFFFFFFF;
 				break;
 			case 't':
-				value.it_interval.tv_usec = atoi(optarg) * 1000;
-				value.it_interval.tv_sec = 0;
+				int tmp = atoi(optarg);
+				int msec = tmp%1000;
+				int sec = tmp/1000;
+				value.it_interval.tv_usec = msec * 1000;
+				value.it_interval.tv_sec = sec;
 				break;
 			case 'T':
 				value.it_interval.tv_sec = atoi(optarg);
