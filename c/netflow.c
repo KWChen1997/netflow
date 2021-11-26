@@ -321,6 +321,9 @@ int main(int argc, char *argv[]){
 	char buf[19] = "";
 	char *ptr;
 	struct in_addr net;
+	int tmp;
+	int msec;
+	int sec;
 	while((opt = getopt(argc, argv, "hs:d:T:t:")) != -1){
 		switch(opt){
 			case 'h':
@@ -350,9 +353,9 @@ int main(int argc, char *argv[]){
 					filter.dmask = 0xFFFFFFFF;
 				break;
 			case 't':
-				int tmp = atoi(optarg);
-				int msec = tmp%1000;
-				int sec = tmp/1000;
+				tmp = atoi(optarg);
+				msec = tmp%1000;
+				sec = tmp/1000;
 				value.it_interval.tv_usec = msec * 1000;
 				value.it_interval.tv_sec = sec;
 				break;
