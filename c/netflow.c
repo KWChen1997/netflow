@@ -69,29 +69,6 @@ unsigned int hash1(uint32_t ip1, uint32_t ip2, uint16_t port1, uint16_t port2){
 	return hashval;
 }
 
-/*
- * hash function to map (ip1,ip2,port1,port2) -> int
- * */
-unsigned int hash2(uint32_t ip1, uint32_t ip2, uint16_t port1, uint16_t port2){
-	unsigned int hashval = 0;
-
-	hashval = (hashval * 37 +  ((unsigned char*)&ip1)[0]) % HASHSIZE;
-	hashval = (hashval * 37 +  ((unsigned char*)&ip1)[1]) % HASHSIZE;
-	hashval = (hashval * 37 +  ((unsigned char*)&ip1)[2]) % HASHSIZE;
-	hashval = (hashval * 37 +  ((unsigned char*)&ip1)[3]) % HASHSIZE;
-
-	hashval = (hashval * 37 +  ((unsigned char*)&ip2)[0]) % HASHSIZE;
-	hashval = (hashval * 37 +  ((unsigned char*)&ip2)[1]) % HASHSIZE;
-	hashval = (hashval * 37 +  ((unsigned char*)&ip2)[2]) % HASHSIZE;
-	hashval = (hashval * 37 +  ((unsigned char*)&ip2)[3]) % HASHSIZE;
-
-	hashval = (port1 + 37 * hashval) % HASHSIZE;
-	hashval = (port2 + 37 * hashval) % HASHSIZE;
-
-	return hashval;
-}
-
-
 char *ntoa(uint32_t net){
 
 	char *ip = (char*)malloc(sizeof(char)*16);
@@ -133,7 +110,6 @@ void connection_init(){
 void connection_add(struct connection *conn){
 	int j = 0;
 	unsigned int h1 = hash1(conn->saddr,conn->daddr,conn->sport,conn->dport);
-	unsigned int h2 = hash2(conn->saddr,conn->daddr,conn->sport,conn->dport);
 
 	unsigned int hashval = h1;
 	struct connection *target = history + hashval;
@@ -145,15 +121,22 @@ void connection_add(struct connection *conn){
 			target->dport == conn->dport){
 			break;
 		}
-		fprintf(stderr, "Collision %d\n", j);
+		//fprintf(stderr, "Collision %d\n", j);
 		j++;
-		hashval = (h1 + (j * h2) % HASHSIZE ) % HASHSIZE;
+		hashval = (h1 + 1) % HASHSIZE;
 		target = history + hashval;
+	}
+
+	if(target->valid && conn->packets < target->packets){
+		memcpy(target, conn, sizeof(struct connection));
+		return;
 	}
 	memcpy(rate + hashval, conn, sizeof(struct connection));
 	rate[hashval].packets -= history[hashval].packets;
 	rate[hashval].bytes -= history[hashval].bytes;
 	memcpy(target, conn, sizeof(struct connection));
+	target->valid = 1;
+	
 	list[idx] = hashval;
 	idx++;
 	return;
@@ -174,12 +157,12 @@ void connection_history(){
 	timeinfo = localtime(&rawtime);
 	strftime(buf, 80, "%H:%M:%S", timeinfo);
 
-	fprintf(stderr,"-------------------\n");
-	fprintf(stderr,"Current time: %s.%03ld\n",buf,curTime.tv_usec/1000);
+	//fprintf(stderr,"-------------------\n");
+	//fprintf(stderr,"Current time: %s.%03ld\n",buf,curTime.tv_usec/1000);
 	
-	fprintf(stderr,"%-10s %-15s %-7s %-15s %-7s %10s %10s\n","type", "ip1", "port1", "ip2", "port2", "packets", "bytes");
+	//fprintf(stderr,"%-10s %-15s %-7s %-15s %-7s %10s %10s\n","type", "ip1", "port1", "ip2", "port2", "packets", "bytes");
 	for(i = 0; i < idx; i++){
-		fprintf(stderr,"%-10s %-15s %-7d %-15s %-7d %10ld %10ld\n", getprotobynumber(history[list[i]].proto)->p_name, ntoa(history[list[i]].saddr), history[list[i]].sport, ntoa(history[list[i]].daddr), history[list[i]].dport, history[list[i]].packets, history[list[i]].bytes);
+		//fprintf(stderr,"%-10s %-15s %-7d %-15s %-7d %10ld %10ld\n", getprotobynumber(history[list[i]].proto)->p_name, ntoa(history[list[i]].saddr), history[list[i]].sport, ntoa(history[list[i]].daddr), history[list[i]].dport, history[list[i]].packets, history[list[i]].bytes);
 		//write(STDOUT_FILENO, history + list[i], sizeof(struct connection));
 	}
 	
@@ -203,16 +186,16 @@ void connection_rate(){
 	timeinfo = localtime(&rawtime);
 	strftime(buf, 80, "%H:%M:%S", timeinfo);
 
-	fprintf(stderr,"-------------------\n");
-	fprintf(stderr,"Current time: %s.%03ld\n",buf,curTime.tv_usec/1000);
+	//fprintf(stderr,"-------------------\n");
+	//fprintf(stderr,"Current time: %s.%03ld\n",buf,curTime.tv_usec/1000);
 	
-	fprintf(stderr,"%-10s %-15s %-7s %-15s %-7s %10s %10s\n","type", "ip1", "port1", "ip2", "port2", "packets", "bytes");
+	//fprintf(stderr,"%-10s %-15s %-7s %-15s %-7s %10s %10s\n","type", "ip1", "port1", "ip2", "port2", "packets", "bytes");
 	for(i = 0; i < idx; i++){
 		fprintf(stderr,"%-10s %-15s %-7d %-15s %-7d %10ld %10ld\n", getprotobynumber(rate[list[i]].proto)->p_name, ntoa(rate[list[i]].saddr), rate[list[i]].sport, ntoa(rate[list[i]].daddr), rate[list[i]].dport, rate[list[i]].packets, rate[list[i]].bytes);
-		//write(STDOUT_FILENO, rate + list[i], sizeof(struct connection));
+		write(STDOUT_FILENO, rate + list[i], sizeof(struct connection));
 	}
-	
-	//write(STDOUT_FILENO, &(struct connection){.proto = 0, .saddr = 0, .sport = 0, .daddr = 0, .dport = 0, .packets = 0, .bytes = 0, .valid = 0}, sizeof(struct connection));
+	fprintf(stderr,"--------------------------------\n");
+	write(STDOUT_FILENO, &(struct connection){.proto = 0, .saddr = 0, .sport = 0, .daddr = 0, .dport = 0, .packets = 0, .bytes = 0, .valid = 0}, sizeof(struct connection));
 	
 	return;
 }
@@ -259,13 +242,13 @@ int cb(enum nf_conntrack_msg_type type, struct nf_conntrack *ct, void *data){
 		connection.packets += nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_PACKETS);
 	}
 	if(nfct_attr_is_set(ct,ATTR_REPL_COUNTER_PACKETS)){
-		connection.packets += nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_PACKETS);
+		//connection.packets += nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_PACKETS);
 	}
 	if(nfct_attr_is_set(ct,ATTR_ORIG_COUNTER_BYTES)){
 		connection.bytes += nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_BYTES);
 	}
 	if(nfct_attr_is_set(ct,ATTR_REPL_COUNTER_BYTES)){
-		connection.bytes += nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_BYTES);
+		//connection.bytes += nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_BYTES);
 	}
 
 	// simple filter for conntrack data
@@ -341,7 +324,7 @@ int main(int argc, char *argv[]){
 	while((opt = getopt(argc, argv, "hs:d:T:t:")) != -1){
 		switch(opt){
 			case 'h':
-				fprintf(stderr,"Usage: ./netflow [-s <ip>] [-d <ip>] [-T <second>] [-t <millisecond>]\n\tNote: -T/-t are exclusive\n");
+				//fprintf(stderr,"Usage: ./netflow [-s <ip>] [-d <ip>] [-T <second>] [-t <millisecond>]\n\tNote: -T/-t are exclusive\n");
 				exit(0);
 				break;
 			case 's':
@@ -382,7 +365,7 @@ int main(int argc, char *argv[]){
 				dup2(filefd,1);
 				break;*/
 			case '?':
-				fprintf(stderr,"\tUsage: ./netflow [-s <ip>] [-d <ip>] [-T <second>] [-t <millisecond>]\n\t\tNote: -T/-t are exclusive\n");
+				//fprintf(stderr,"\tUsage: ./netflow [-s <ip>] [-d <ip>] [-T <second>] [-t <millisecond>]\n\t\tNote: -T/-t are exclusive\n");
 				exit(-1);
 		}
 	}
@@ -402,7 +385,7 @@ int main(int argc, char *argv[]){
 	}
 
 
-	fprintf(stderr,"Start conntrack ...\n");
+	//fprintf(stderr,"Start conntrack ...\n");
 	
 	ret = setitimer(ITIMER_REAL,&value,&ovalue);
 	if(ret == -1){
